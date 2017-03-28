@@ -17,14 +17,13 @@ class ExerciseController extends Controller
     public function exercise($exercise_id)
     {
 
-        //dd(Auth::user()->responses()->answer()->question());
-
         $questions = Question::with('answers')->where('exercise_id', $exercise_id)->get();
 
+        //did this person already take this exercise?
         $already_taken = $questions->first()->answers()->first()->responses()->where('user_id', Auth::user()->id);
 
         if($already_taken){
-            dd('dog god');
+            //normally we do not want people to retake exercises, but for debug this is fine
         }
 
         return view('exercise.exercise', [
@@ -36,58 +35,50 @@ class ExerciseController extends Controller
 
         $user_id = Auth::user()->id;
 
+        //get all the user's answers, then loop through them, and create entries for each
         foreach($request->except(['_token', 'quiz_id']) as $question_answer => $value){
             $response = Response::create(['user_id' => $user_id , 'answer_id' => $value]);
         }
 
-        return redirect('/results');
+        if(isset($response)){
+            return redirect('/results');
+        }
+        else{
+            return Redirect::back()->withErrors(['msg', 'Your exercise did not get saved, please try again.']);
+        }
+
 
     }
 
-    public function results($exercise_id){
+    public function results($exercise_id = 1){
 
+        //TODO move this logic to model, and refactor with a groupby for better performance
+        // From each question where exercise_id is such, get question text, answer text, and a list of the responses
         $data = Question::where('exercise_id', $exercise_id)
             ->join('answers', 'questions.id', '=', 'answers.question_id')
             ->join('responses', 'answers.id', '=' , 'responses.answer_id')
-            ->select( 'questions.id as question_id', 'questions.body as question', 'responses.answer_id', 'answers.body')->get();
+            ->select( 'questions.id as question_id', 'questions.body as question',
+                'responses.answer_id', 'answers.body')->get();
 
+        //get the question ids so we can use them like keys, and loop through them
         $question_ids = $data->pluck('question_id')->unique();
-        //dd($question_ids);
-
-        //dd($data->where('question_id', "1")->pluck('answer_id'));
 
         foreach($question_ids as $id){
-            $chart_data["$id"] = $data->where('question_id', $id)->groupBy('answer_id');
+            //for each question id put it's answers in a separated array, and group by answer_id
+            $question_data["$id"] = $data->where('question_id', $id)->groupBy('answer_id');
         }
 
-        //dd($chart_data);
+        //init this as a collection so we have access to collections functions
+        $question_chart = collect();
 
-        $chart = Charts::create('line', 'highcharts')
-            //->setView('custom.line.chart.view') // Use this if you want to use your own template
-            ->setTitle('My nice chart')
-            ->setLabels(['First', 'Second', 'Third'])
-            ->setValues([5,10,20])
-            ->setDimensions(1000,500)
-            ->setResponsive(false);
-
-//        $user_chart = Charts::database( $chart_data["$question_ids[0]"],'bar', 'highcharts')
-//            ->setElementLabel("Answers Chosen")
-//            ->setDimensions(1000, 500)
-//            ->setResponsive(false)
-//            ->groupBy('question_id');
-
-//        $user_chart = Charts::multi('bar', 'highcharts')
-//            ->setResponsive(false)
-//            ->setDimensions(0, 500)
-//            ->setColors(['#ff0000', '#00ff00', '#0000ff'])
-//            ->setLabels(['Mood Question', 'How was your day?', 'How will your day be?'])
-//            //->setDataset('Test 1', [1,2,3])
-//            //->setDataset('Test 2', [0,6,0])
-//            ->setDataset('Mood Question', [3,4,1]);
-
-        $user_chart = collect();
-
-        foreach($chart_data as $question_id => $collection_of_answers){
+        //loop through each question
+        //right now the data looks like such
+        // question_id[id] = [
+        //  answer_id => [original data pull, original data pull]
+        //  ]
+        // so we have to go two levels deep to pull up that data, and we count and collect the data
+        // for our chart system
+        foreach($question_data as $question_id => $collection_of_answers){
             $answer_count = collect();
             $answer_label = collect();
             $question = "";
@@ -98,7 +89,7 @@ class ExerciseController extends Controller
                 $question = $answer->first()->question;
             }
 
-            $user_chart->push(Charts::create('bar', 'highcharts')
+            $question_chart->push(Charts::create('bar', 'highcharts')
                 ->setTitle($question)
                 ->setLabels($answer_label)
                 ->setValues($answer_count)
@@ -107,8 +98,6 @@ class ExerciseController extends Controller
                 ->setResponsive(false));
         }
 
-
-
-        return view('exercise.results', ['charts' => $user_chart]);
+        return view('exercise.results', ['charts' => $question_chart]);
     }
 }

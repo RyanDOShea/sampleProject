@@ -3,6 +3,10 @@
 @section('content')
     <div class="container">
         <div class="row">
+
+            @if($errors->any())
+                <h4>{{$errors->first()}}</h4>
+            @endif
             <div class="col-md-10 col-md-offset-1">
                 @if (count($questions) > 0)
                     <form action="{{url('/exerciseSubmit')}}" method="POST">

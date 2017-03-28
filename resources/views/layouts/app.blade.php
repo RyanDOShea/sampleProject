@@ -50,6 +50,7 @@
                 <!-- Left Side Of Navbar -->
                 <ul class="nav navbar-nav">
                     <li><a href="{{ url('/home') }}">Home</a></li>
+                    <li><a href="{{ url('/exercise/1') }}">Exercise 1</a></li>
                     <li><a href="{{ url('/results') }}">Results</a></li>
                 </ul>
 
