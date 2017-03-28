@@ -20,11 +20,13 @@ class ExerciseController extends Controller
         $questions = Question::with('answers')->where('exercise_id', $exercise_id)->get();
 
         //did this person already take this exercise?
-        $already_taken = $questions->first()->answers()->first()->responses()->where('user_id', Auth::user()->id);
-
-        if($already_taken){
-            //normally we do not want people to retake exercises, but for debug this is fine
-        }
+//        $already_taken = $questions->first()
+//            ->answers()->first()
+//            ->responses()->where('user_id', Auth::user()->id);
+//
+//        if($already_taken){
+//            //normally we do not want people to retake exercises, but for debug this is fine
+//        }
 
         return view('exercise.exercise', [
             'questions' => $questions,
