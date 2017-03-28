@@ -35,10 +35,13 @@ class ExerciseController extends Controller
 
     public function submit(Request $request){
 
-        $user_id = Auth::user()->id;
+        $user = Auth::user();
 
-        if(!isset($user_id)){
+        if(!isset($user)){
             $user_id = 1;
+        }
+        else{
+            $user_id = $user->id;
         }
 
         //get all the user's answers, then loop through them, and create entries for each
