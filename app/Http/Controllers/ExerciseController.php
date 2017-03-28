@@ -37,6 +37,10 @@ class ExerciseController extends Controller
 
         $user_id = Auth::user()->id;
 
+        if(!isset($user_id)){
+            $user_id = 1;
+        }
+
         //get all the user's answers, then loop through them, and create entries for each
         foreach($request->except(['_token', 'quiz_id']) as $question_answer => $value){
             $response = Response::create(['user_id' => $user_id , 'answer_id' => $value]);
