@@ -11,6 +11,9 @@ Dependencies From Composer:
   - 
   - pull depot
   - run composer install
+  - You might have to run these two commands for the charts package
+   - php artisan vendor:publish --tag=charts_config
+   - php artisan vendor:publish --tag=charts_assets
   - set up database connection
   - run migration and seeder
   - register your own user, and take the one exercise
