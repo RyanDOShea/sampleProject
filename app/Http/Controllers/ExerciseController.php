@@ -59,10 +59,26 @@ class ExerciseController extends Controller
 
     }
 
-    public function results($exercise_id = 1, $user_id = null){
+    public function test(){
 
-        $questions = Question::with('answers', 'answers.responses')->where('exercise_id', 1)->get();
-        //can do a ->has here to filter out users
+        $user_id = 0;
+
+        $questions = Question::with( ['answers.responses' => function($query) use($user_id){
+            if($user_id != 0){$query->where('user_id', '=', $user_id);}
+        }])->where('exercise_id', 1)
+            ->get();
+
+        dd($questions);
+    }
+
+    public function results($exercise_id = 1, $user_id = 0){
+
+        //rather than using route paramaters I should instead made it a get request so I
+        // can have either $user_id without having exercise id as well
+
+        $questions = Question::with( ['answers.responses' => function($query) use($user_id){
+            if($user_id != 0){$query->where('user_id', '=', $user_id);}
+        }])->where('exercise_id', $exercise_id)->get();
 
         $question_chart = collect();
 
