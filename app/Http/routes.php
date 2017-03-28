@@ -15,6 +15,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/test', 'ExerciseController@test');
 
 Route::auth();
 //Everything under here is required to be logged in, otherwise you get kick to the login screen

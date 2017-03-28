@@ -59,52 +59,31 @@ class ExerciseController extends Controller
 
     }
 
-    public function results($exercise_id = 1){
+    public function results($exercise_id = 1, $user_id = null){
 
-        //TODO move this logic to model, and refactor with a groupby for better performance
-        // From each question where exercise_id is such, get question text, answer text, and a list of the responses
-        $data = Question::where('exercise_id', $exercise_id)
-            ->join('answers', 'questions.id', '=', 'answers.question_id')
-            ->join('responses', 'answers.id', '=' , 'responses.answer_id')
-            ->select( 'questions.id as question_id', 'questions.body as question',
-                'responses.answer_id', 'answers.body')->get();
+        $questions = Question::with('answers', 'answers.responses')->where('exercise_id', 1)->get();
+        //can do a ->has here to filter out users
 
-        //get the question ids so we can use them like keys, and loop through them
-        $question_ids = $data->pluck('question_id')->unique();
-
-        foreach($question_ids as $id){
-            //for each question id put it's answers in a separated array, and group by answer_id
-            $question_data["$id"] = $data->where('question_id', $id)->groupBy('answer_id');
-        }
-
-        //init this as a collection so we have access to collections functions
         $question_chart = collect();
 
-        //loop through each question
-        //right now the data looks like such
-        // question_id[id] = [
-        //  answer_id => [original data pull, original data pull]
-        //  ]
-        // so we have to go two levels deep to pull up that data, and we count and collect the data
-        // for our chart system
-        foreach($question_data as $question_id => $collection_of_answers){
-            $answer_count = collect();
-            $answer_label = collect();
-            $question = "";
+        foreach($questions as $question){
+            $question_text = $question->body;
 
-            foreach($collection_of_answers as $answer_id => $answer){
-                $answer_count->push($answer->count());
-                $answer_label->push($answer->first()->body);
-                $question = $answer->first()->question;
+            $answer_text = collect();
+            $response_count = collect();
+            foreach($question->answers as $answer){
+                $answer_text->push($answer->body);
+                $response_count->push($answer->responses->count());
             }
 
             $question_chart->push(Charts::create('bar', 'highcharts')
-                ->setTitle($question)
-                ->setLabels($answer_label)
-                ->setValues($answer_count)
+                ->setTitle($question_text)
+                ->setLabels($answer_text)
+                ->setValues($response_count)
                 ->setElementLabel("Answers Chosen")
                 ->setDimensions(1000,500)
                 ->setResponsive(false));
+
         }
 
         return view('exercise.results', ['charts' => $question_chart]);
