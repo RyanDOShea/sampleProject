@@ -29,6 +29,9 @@ Dependencies From Composer:
   Database Structure:
   -
   Exercise has many questions
+  
   question has many answers
+  
   answers has many responses
+  
   users has many responses
